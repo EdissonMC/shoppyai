@@ -95,14 +95,14 @@ curl -X POST "http://localhost:8001/chat" \
 
 ## 📊 Project Status
 
-### ✅ MVP Phase 1 - Completed
+### ✅ MVP Phase 1 - In Progress
 - [x] Project structure and architecture design
 - [x] FastAPI + LangChain integration
 - [x] Basic chat agent with OpenAI
 - [x] Environment setup and dependencies
 - [x] Docker containerization ready
 
-### 🔄 Phase 2 - In Progress
+### 🔄 Phase 2 -  Planned
 - [ ] Django backend with multi-vendor models
 - [ ] Product catalog and vendor management
 - [ ] Advanced AI agents (RAG, Actions, Analytics)
@@ -141,36 +141,13 @@ flake8 .
 mypy .
 ```
 
-## 🌟 Why This Project?
 
-### For Portfolio Demonstration:
-- **Modern Architecture**: Microservices, AI integration, cloud-native
-- **Full-Stack Skills**: Frontend, Backend, AI, DevOps
-- **Business Value**: Solves real e-commerce problems
-- **Scalable Design**: Production-ready architecture
-- **Current Technologies**: LangChain, FastAPI, Next.js, AWS
 
-### Technical Learning Outcomes:
-- Advanced Django ORM with complex relationships
-- LangChain and AI agent orchestration
-- Real-time WebSocket communication
-- Vector databases and semantic search
-- Modern frontend development with TypeScript
-- Containerization and cloud deployment
-- API design and microservices patterns
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 👤 Author
 
 **Edison** - Full-Stack Developer specializing in AI-powered applications
 
-- Portfolio: [your-portfolio-url]
-- LinkedIn: [your-linkedin]
-- GitHub: [your-github]
-
----
+- LinkedIn:[(https://www.linkedin.com/in/edissonmogollon/)]
 
 *Built with ❤️ using Django, FastAPI, LangChain, and Next.js*
