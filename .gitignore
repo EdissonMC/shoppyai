@@ -1,0 +1,246 @@
+# === PYTHON ===
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+.env/
+
+# === ENVIRONMENT VARIABLES ===
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.staging
+
+# === LANGCHAIN / AI ===
+# Vector database files
+chroma_data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Model files (if storing locally)
+*.bin
+*.safetensors
+models/
+embeddings/
+
+# LangChain cache
+.langchain_cache/
+.langsmith/
+
+# === FASTAPI ===
+# FastAPI specific
+.pytest_cache/
+.coverage
+
+# === DJANGO (para futuro backend) ===
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+static/
+
+# === NODE.JS (para futuro frontend) ===
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# Next.js
+.next/
+out/
+build/
+
+# === DOCKER ===
+# Docker volumes data
+postgres_data/
+redis_data/
+chroma_data/
+django_media/
+django_static/
+ai_engine_cache/
+
+# Docker override files
+docker-compose.override.yml
+
+# === IDE & EDITORS ===
+# VSCode
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# JetBrains IDEs
+.idea/
+*.swp
+*.swo
+*~
+
+# Vim
+*.swp
+*.swo
+*.swn
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+
+# === MACOS ===
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+# === WINDOWS ===
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# === LOGS ===
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# === TEMPORARY FILES ===
+*.tmp
+*.temp
+.temp/
+.tmp/
+
+# === SECRETS & KEYS ===
+# API Keys and secrets
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+.secrets/
+
+# === DATABASE ===
+# Local database files
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# === MONITORING & ANALYTICS ===
+# Monitoring files
+.monitoring/
+metrics/
+traces/
+
+# === TESTING ===
+# Test results
+test-results/
+test-reports/
+.coverage
+htmlcov/
+
+# === DEPLOYMENT ===
+# Deployment files (will be configured later)
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+
+# Kubernetes secrets
+secrets.yaml
+configmap.yaml

@@ -1,0 +1,1744 @@
+# AI-Powered Multi-Vendor E-Commerce Platform
+## Portfolio Project: Django + FastAPI + Next.js + AI
+### De Cero a Production-Ready en AWS
+
+---
+
+## 🎯 VISIÓN DEL PROYECTO
+
+### **¿Qué Estamos Construyendo?**
+Una plataforma e-commerce multi-vendor revolucionaria donde los usuarios **conversan con AI** para descubrir y comprar productos. Un proyecto full-stack completo que demuestra habilidades modernas de desarrollo backend, AI integration, y arquitectura de microservicios.
+
+### **Problema Central que Resolvemos**
+- 🚫 **85% de búsquedas e-commerce fallan** en mostrar productos relevantes
+- 🚫 **44% de usuarios tardan 3+ minutos** en encontrar lo que buscan
+- 🚫 **98% de visitantes abandonan** sin comprar nada
+- 🚫 **Información de productos insuficiente** es la queja #1
+
+### **Nuestra Solución Diferenciadora**
+✅ **Chat conversacional inteligente** que entiende necesidades reales  
+✅ **AI que explica** por qué recomienda cada producto  
+✅ **Búsqueda semántica híbrida** (RAG + tradicional + SQL)  
+✅ **Multi-vendor nativo** con dashboards especializados  
+✅ **Arquitectura microservicios** escalable en AWS
+
+### **Objetivos de Portfolio**
+✅ **Django expertise**: ORM complejo, Admin customizado, DRF APIs  
+✅ **FastAPI moderno**: Async APIs, AI integration, performance  
+✅ **Frontend avanzado**: Next.js, TypeScript, real-time features  
+✅ **DevOps skills**: Docker, AWS deployment, CI/CD  
+✅ **AI integration**: RAG, embeddings, conversational interfaces
+
+---
+
+## 🏗️ ARQUITECTURA HÍBRIDA INTELIGENTE
+
+### **Stack Tecnológico - Decisiones Fundamentales**
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                     ARQUITECTURA MICROSERVICIOS                     │
+├─────────────────┬─────────────────┬─────────────────┬───────────────┤
+│   FRONTEND      │  DJANGO CORE    │   FASTAPI AI    │ INFRASTRUCTURE│
+│                 │   (E-COMMERCE)  │    (ENGINE)     │               │
+│ Next.js 14      │ Django 4.2      │ FastAPI 0.104   │ Docker        │
+│ TypeScript      │ DRF 3.14        │ LangChain       │ AWS ECS       │
+│ Tailwind CSS    │ PostgreSQL 15   │ ChromaDB        │ AWS RDS       │
+│ React Query     │ Redis 7         │ OpenAI/Claude   │ AWS S3        │
+│ Socket.IO       │ Celery          │ Pydantic V2     │ CloudFormation│
+└─────────────────┴─────────────────┴─────────────────┴───────────────┘
+```
+
+### **¿Por Qué Esta Arquitectura Híbrida?**
+
+**🔥 DJANGO (E-Commerce Core) - Puerto 8000**
+- ✅ **Admin Panel** personalizado para vendors y productos
+- ✅ **ORM poderoso** para relaciones complejas multivendor
+- ✅ **Autenticación robusta** con permisos granulares
+- ✅ **DRF APIs** para comunicación con frontend y FastAPI
+- ✅ **Background tasks** con Celery (emails, reportes, etc.)
+
+**🔥 FASTAPI (AI Engine) - Puerto 8001**
+- ✅ **Performance superior** para AI workloads
+- ✅ **Async processing** para chat en tiempo real
+- ✅ **Type hints** y documentación automática
+- ✅ **WebSockets** para chat real-time
+- ✅ **Vector operations** optimizadas
+
+**🔥 NEXT.JS (Frontend) - Puerto 3000**
+- ✅ **SSR/SSG** para SEO óptimo
+- ✅ **TypeScript** end-to-end
+- ✅ **Performance** optimizada automáticamente
+- ✅ **Real-time** chat interface
+- ✅ **Responsive** design mobile-first
+
+---
+
+## 📊 DISEÑO DE BASE DE DATOS - MULTIVENDOR NATIVO
+
+### **Modelos Django - E-Commerce Core**
+
+```python
+# vendors/models.py
+class Vendor(models.Model):
+    VENDOR_STATUS = [
+        ('pending', 'Pending Approval'),
+        ('active', 'Active'),
+        ('suspended', 'Suspended'),
+        ('rejected', 'Rejected'),
+    ]
+    
+    # Basic Info
+    name = models.CharField(max_length=200)
+    slug = models.SlugField(unique=True)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='vendor_profile')
+    
+    # Business Details
+    business_email = models.EmailField()
+    business_phone = models.CharField(max_length=20)
+    description = models.TextField()
+    logo = models.ImageField(upload_to='vendor_logos/', null=True, blank=True)
+    
+    # Financial
+    commission_rate = models.DecimalField(max_digits=5, decimal_places=2, default=15.00)
+    payment_details = models.JSONField(default=dict)  # Bank account, etc.
+    
+    # Status & Permissions
+    status = models.CharField(max_length=20, choices=VENDOR_STATUS, default='pending')
+    is_verified = models.BooleanField(default=False)
+    can_create_products = models.BooleanField(default=True)
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'vendors'
+        ordering = ['-created_at']
+
+# products/models.py
+class Category(models.Model):
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(unique=True)
+    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE)
+    description = models.TextField(blank=True)
+    image = models.ImageField(upload_to='categories/', null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    
+    class Meta:
+        verbose_name_plural = 'categories'
+        db_table = 'categories'
+
+class Product(models.Model):
+    PRODUCT_STATUS = [
+        ('draft', 'Draft'),
+        ('active', 'Active'),
+        ('inactive', 'Inactive'),
+        ('out_of_stock', 'Out of Stock'),
+    ]
+    
+    # Basic Info
+    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, related_name='products')
+    name = models.CharField(max_length=200)
+    slug = models.SlugField()
+    sku = models.CharField(max_length=100, unique=True)
+    
+    # Content (Optimizado para AI)
+    short_description = models.CharField(max_length=500)
+    description = models.TextField()  # Rich content para RAG
+    specifications = models.JSONField(default=dict)  # Structured data
+    
+    # Categories & Tags
+    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    tags = models.JSONField(default=list)  # Manual tags
+    ai_tags = models.JSONField(default=list)  # Generated by AI
+    
+    # Pricing
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    compare_at_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    cost_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    
+    # Inventory
+    inventory_quantity = models.IntegerField(default=0)
+    track_inventory = models.BooleanField(default=True)
+    continue_selling_when_out_of_stock = models.BooleanField(default=False)
+    
+    # AI Features
+    embedding_generated = models.BooleanField(default=False)
+    embedding_updated_at = models.DateTimeField(null=True, blank=True)
+    search_keywords = models.TextField(blank=True)  # For hybrid search
+    
+    # Status & Metadata
+    status = models.CharField(max_length=20, choices=PRODUCT_STATUS, default='draft')
+    is_featured = models.BooleanField(default=False)
+    weight = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    dimensions = models.JSONField(default=dict)  # length, width, height
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'products'
+        unique_together = ['vendor', 'slug']
+        indexes = [
+            models.Index(fields=['vendor', 'status']),
+            models.Index(fields=['category', 'status']),
+            models.Index(fields=['embedding_generated']),
+        ]
+
+# orders/models.py
+class Order(models.Model):
+    ORDER_STATUS = [
+        ('pending', 'Pending Payment'),
+        ('paid', 'Paid'),
+        ('processing', 'Processing'),
+        ('shipped', 'Shipped'),
+        ('delivered', 'Delivered'),
+        ('cancelled', 'Cancelled'),
+        ('refunded', 'Refunded'),
+    ]
+    
+    # Basic Info
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='orders')
+    order_number = models.CharField(max_length=32, unique=True)
+    
+    # Financial
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2)
+    tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    shipping_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    # Multi-vendor Support
+    vendor_splits = models.JSONField(default=dict)  # {vendor_id: {amount, commission, net}}
+    
+    # Shipping
+    shipping_address = models.JSONField(default=dict)
+    billing_address = models.JSONField(default=dict)
+    
+    # AI Integration
+    ai_conversation_id = models.UUIDField(null=True, blank=True)
+    ai_recommended = models.BooleanField(default=False)
+    
+    # Status & Tracking
+    status = models.CharField(max_length=20, choices=ORDER_STATUS, default='pending')
+    payment_status = models.CharField(max_length=20, default='pending')
+    fulfillment_status = models.CharField(max_length=20, default='unfulfilled')
+    
+    # Metadata
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'orders'
+        ordering = ['-created_at']
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)  # Denormalized for performance
+    
+    quantity = models.PositiveIntegerField()
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    # Snapshot data (in case product changes)
+    product_snapshot = models.JSONField(default=dict)
+    
+    class Meta:
+        db_table = 'order_items'
+
+# AI Integration Models
+class AIConversation(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ai_conversations')
+    session_id = models.UUIDField(default=uuid.uuid4, unique=True)
+    
+    # Conversation Data
+    messages = models.JSONField(default=list)  # [{role, content, timestamp}]
+    context_data = models.JSONField(default=dict)  # User preferences, history
+    
+    # Recommendations
+    recommended_products = models.JSONField(default=list)  # Product IDs
+    conversion_products = models.JSONField(default=list)  # Actually purchased
+    
+    # Analytics
+    total_messages = models.PositiveIntegerField(default=0)
+    ended_with_purchase = models.BooleanField(default=False)
+    satisfaction_score = models.FloatField(null=True, blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'ai_conversations'
+        ordering = ['-updated_at']
+```
+
+### **Relaciones y Índices Optimizados**
+```sql
+-- Índices para performance crítico
+CREATE INDEX idx_products_vendor_status ON products(vendor_id, status);
+CREATE INDEX idx_products_category_active ON products(category_id, status) WHERE status = 'active';
+CREATE INDEX idx_products_embedding_pending ON products(embedding_generated) WHERE embedding_generated = false;
+CREATE INDEX idx_orders_user_status ON orders(user_id, status);
+CREATE INDEX idx_ai_conversations_session ON ai_conversations(session_id);
+CREATE INDEX idx_vendors_status_active ON vendors(status) WHERE status = 'active';
+
+-- Full-text search en productos
+CREATE INDEX idx_products_search ON products USING gin(to_tsvector('spanish', name || ' ' || description));
+```
+
+---
+
+## 🤖 ARQUITECTURA DE AI AGENTS - FASTAPI ENGINE
+
+### **Sistema de 4 Agentes Especializados + Orquestador**
+
+```python
+┌─────────────────────────────────────────────────────────────────────┐
+│                    AI AGENT ORCHESTRATOR                            │
+├─────────────┬─────────────┬─────────────┬─────────────┬─────────────┤
+│   QUERY     │    RAG      │   ACTION    │  PRODUCT    │  ANALYTICS  │
+│   AGENT     │   AGENT     │   AGENT     │   AGENT     │   AGENT     │
+│             │             │             │             │             │
+│• Parse      │• Vector     │• Add cart   │• Compare    │• Track      │
+│  intent     │  search     │• Create     │  products   │  behavior   │
+│• Extract    │• Semantic   │  order      │• Price      │• A/B test   │
+│  entities   │  similarity │• Update     │  alerts     │• Conversion │
+│• Context    │• Hybrid     │  prefs      │• Stock      │• Feedback   │
+│  building   │  results    │• Vendor     │  check      │  loop       │
+│• Query      │• Ranking    │  routing    │• Reviews    │• Optimize   │
+│  expansion  │  algorithm  │• Payment    │  summary    │  responses  │
+└─────────────┴─────────────┴─────────────┴─────────────┴─────────────┘
+```
+
+### **Agent 1: Query Understanding Agent**
+```python
+class QueryAgent:
+    """
+    Responsabilidades:
+    - Intent Classification: búsqueda, comparación, compra, soporte, información
+    - Entity Extraction: categorías, precios, marcas, especificaciones, ubicación
+    - Context Enrichment: historial + preferencias + sesión actual
+    - Query Expansion: sinónimos, términos relacionados, búsquedas similares
+    """
+    
+    async def process_query(self, message: str, user_context: dict) -> QueryIntent:
+        # 1. Clasificar intención principal
+        intent = await self.classify_intent(message)
+        
+        # 2. Extraer entidades nombradas
+        entities = await self.extract_entities(message)
+        
+        # 3. Expandir consulta con contexto
+        expanded_query = await self.expand_with_context(message, user_context)
+        
+        # 4. Generar parámetros de búsqueda
+        search_params = await self.build_search_params(intent, entities)
+        
+        return QueryIntent(
+            original_message=message,
+            intent_type=intent,
+            entities=entities,
+            expanded_terms=expanded_query,
+            search_parameters=search_params,
+            confidence_score=self.calculate_confidence()
+        )
+
+# Ejemplos de processing:
+# Input: "Necesito algo para el dolor de espalda que no sea muy caro"
+# Output: {
+#   "intent": "product_search",
+#   "entities": {
+#     "problem": "dolor de espalda",
+#     "price_range": "low_to_medium",
+#     "category_hints": ["salud", "bienestar", "terapéutico"]
+#   },
+#   "expanded_terms": [
+#     "dolor espalda", "lumbar", "ergonómico", "terapéutico",
+#     "almohada lumbar", "faja", "medicamento", "crema"
+#   ],
+#   "search_parameters": {
+#     "categories": ["salud-bienestar", "hogar-oficina"],
+#     "max_price": 50.00,
+#     "keywords": ["espalda", "lumbar", "dolor", "ergonómico"]
+#   }
+# }
+```
+
+### **Agent 2: RAG (Retrieval Augmented Generation) Agent**
+```python
+class RAGAgent:
+    """
+    Responsabilidades:
+    - Vector Search: embeddings similarity en ChromaDB
+    - Hybrid Search: combinar semántico + SQL tradicional + full-text
+    - Advanced Ranking: relevancia + popularidad + stock + vendor rating
+    - Context Injection: vendor info, reviews, pricing history, alternatives
+    """
+    
+    async def search_products(self, query_intent: QueryIntent) -> SearchResults:
+        # 1. Búsqueda vectorial semántica
+        vector_results = await self.vector_search(query_intent.expanded_terms)
+        
+        # 2. Búsqueda SQL tradicional
+        sql_results = await self.sql_search(query_intent.search_parameters)
+        
+        # 3. Full-text search en PostgreSQL
+        fulltext_results = await self.fulltext_search(query_intent.original_message)
+        
+        # 4. Combinar y rankear resultados
+        combined_results = await self.hybrid_ranking(
+            vector_results, sql_results, fulltext_results
+        )
+        
+        # 5. Enriquecer con contexto adicional
+        enriched_results = await self.enrich_with_context(combined_results)
+        
+        return SearchResults(
+            products=enriched_results,
+            search_metadata=self.get_search_metadata(),
+            ranking_explanation=self.explain_ranking(),
+            alternative_suggestions=await self.get_alternatives()
+        )
+    
+    async def vector_search(self, terms: List[str]) -> List[ProductMatch]:
+        # ChromaDB similarity search
+        embeddings = await self.embed_terms(terms)
+        results = await self.chroma_client.query(
+            query_embeddings=embeddings,
+            n_results=50,
+            include=['metadatas', 'documents', 'distances']
+        )
+        return self.process_vector_results(results)
+    
+    async def hybrid_ranking(self, *result_sets) -> List[ProductMatch]:
+        # Algoritmo de ranking personalizado
+        # Combina: relevancia semántica + popularidad + stock + vendor rating
+        # + precio competitivo + reviews score
+        pass
+```
+
+### **Agent 3: Action Agent**
+```python
+class ActionAgent:
+    """
+    Responsabilidades:
+    - Cart Management: CRUD operations on cart
+    - Order Creation: multi-vendor order processing
+    - Vendor Communication: stock checks, custom requests
+    - Payment Processing: integration con payment gateways
+    - User Preference Learning: update ML models
+    """
+    
+    async def execute_action(self, action_intent: ActionIntent) -> ActionResult:
+        match action_intent.action_type:
+            case "add_to_cart":
+                return await self.add_to_cart(action_intent)
+            case "create_order":
+                return await self.create_multivendor_order(action_intent)
+            case "compare_products":
+                return await self.compare_products(action_intent)
+            case "set_price_alert":
+                return await self.create_price_alert(action_intent)
+            case "contact_vendor":
+                return await self.contact_vendor(action_intent)
+    
+    async def create_multivendor_order(self, intent: ActionIntent) -> OrderResult:
+        # 1. Group cart items by vendor
+        vendor_groups = self.group_items_by_vendor(intent.cart_items)
+        
+        # 2. Verify stock availability
+        stock_verification = await self.verify_stock_all_vendors(vendor_groups)
+        
+        # 3. Calculate vendor splits and commissions
+        financial_splits = self.calculate_vendor_splits(vendor_groups)
+        
+        # 4. Create order via Django API
+        order_data = await self.django_client.create_order({
+            "user_id": intent.user_id,
+            "items": intent.cart_items,
+            "vendor_splits": financial_splits,
+            "ai_conversation_id": intent.conversation_id
+        })
+        
+        # 5. Trigger fulfillment workflows
+        await self.trigger_vendor_notifications(vendor_groups)
+        
+        return OrderResult(success=True, order=order_data)
+```
+
+### **Agent 4: Product Intelligence Agent**
+```python
+class ProductAgent:
+    """
+    Responsabilidades:
+    - Product Comparison: detailed feature comparison
+    - Price Intelligence: historical pricing, alerts, predictions
+    - Review Analysis: sentiment analysis, summary generation
+    - Stock Monitoring: availability across vendors
+    - Alternative Suggestions: similar/complementary products
+    """
+    
+    async def compare_products(self, product_ids: List[int]) -> ProductComparison:
+        # 1. Fetch detailed product data from Django
+        products = await self.django_client.get_products_detailed(product_ids)
+        
+        # 2. Extract comparable features
+        features_matrix = self.extract_features_matrix(products)
+        
+        # 3. Generate AI comparison insights
+        comparison_insights = await self.generate_comparison_insights(features_matrix)
+        
+        # 4. Price analysis
+        price_analysis = await self.analyze_pricing(products)
+        
+        # 5. Review sentiment analysis
+        review_analysis = await self.analyze_reviews(products)
+        
+        return ProductComparison(
+            products=products,
+            feature_comparison=features_matrix,
+            ai_insights=comparison_insights,
+            price_analysis=price_analysis,
+            review_summary=review_analysis,
+            recommendation=self.generate_recommendation()
+        )
+```
+
+### **Agent 5: Analytics & Learning Agent**
+```python
+class AnalyticsAgent:
+    """
+    Responsabilidades:
+    - Behavior Tracking: user interactions, preferences, patterns
+    - Conversion Optimization: A/B testing, recommendation tuning
+    - Feedback Loop: learn from user actions and outcomes
+    - Performance Monitoring: latency, accuracy, user satisfaction
+    - Business Intelligence: vendor performance, product insights
+    """
+    
+    async def track_interaction(self, interaction: UserInteraction):
+        # 1. Log interaction with context
+        await self.log_interaction(interaction)
+        
+        # 2. Update user preference model
+        await self.update_user_preferences(interaction)
+        
+        # 3. Update product popularity metrics
+        await self.update_product_metrics(interaction)
+        
+        # 4. Feed ML models for future recommendations
+        await self.update_recommendation_models(interaction)
+    
+    async def optimize_recommendations(self, conversation_id: str) -> OptimizationResult:
+        # A/B testing logic para mejorar recommendations
+        pass
+```
+
+### **Orquestador Central**
+```python
+class AIOrchestrator:
+    """
+    Coordina la comunicación entre agentes y maneja el flujo completo
+    de una conversación de chat hasta la acción final.
+    """
+    
+    def __init__(self):
+        self.query_agent = QueryAgent()
+        self.rag_agent = RAGAgent()
+        self.action_agent = ActionAgent()
+        self.product_agent = ProductAgent()
+        self.analytics_agent = AnalyticsAgent()
+    
+    async def process_message(self, chat_message: ChatMessage) -> ChatResponse:
+        # 1. Parse y entender la consulta
+        query_intent = await self.query_agent.process_query(
+            chat_message.message, 
+            chat_message.context
+        )
+        
+        # 2. Ejecutar búsqueda si es necesario
+        if query_intent.requires_search:
+            search_results = await self.rag_agent.search_products(query_intent)
+        
+        # 3. Ejecutar acciones si es necesario
+        if query_intent.requires_action:
+            action_result = await self.action_agent.execute_action(query_intent)
+        
+        # 4. Generar respuesta conversacional
+        response = await self.generate_conversational_response(
+            query_intent, search_results, action_result
+        )
+        
+        # 5. Track interaction para aprendizaje
+        await self.analytics_agent.track_interaction(chat_message, response)
+        
+        return ChatResponse(
+            message=response.text,
+            products=search_results.products if search_results else [],
+            actions_taken=action_result.actions if action_result else [],
+            suggested_followups=response.followup_suggestions
+        )
+```
+
+---
+
+## 🔄 FLUJO DE DATOS Y COMUNICACIÓN ENTRE SERVICIOS
+
+### **Comunicación Inter-Servicios**
+
+```python
+# Frontend (Next.js) ↔ Django (REST API)
+# Autenticación, productos, órdenes, vendor management
+
+# Frontend API Client
+class DjangoAPIClient {
+  async getProducts(filters: ProductFilters): Promise<Product[]> {
+    const response = await fetch(`${DJANGO_API_URL}/api/products/`, {
+      method: 'GET',
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(filters)
+    });
+    return response.json();
+  }
+  
+  async createOrder(orderData: OrderCreate): Promise<Order> {
+    const response = await fetch(`${DJANGO_API_URL}/api/orders/`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(orderData)
+    });
+    return response.json();
+  }
+}
+
+# Frontend (Next.js) ↔ FastAPI (WebSocket + REST)
+# Chat real-time, AI interactions
+
+# WebSocket Chat Connection
+class AIChat {
+  private ws: WebSocket;
+  
+  connect(sessionId: string) {
+    this.ws = new WebSocket(`${AI_API_URL}/ws/chat/${sessionId}`);
+    
+    this.ws.onmessage = (event) => {
+      const response: ChatResponse = JSON.parse(event.data);
+      this.handleAIResponse(response);
+    };
+  }
+  
+  sendMessage(message: string, context: ChatContext) {
+    this.ws.send(JSON.stringify({
+      type: 'chat_message',
+      message,
+      context,
+      timestamp: new Date().toISOString()
+    }));
+  }
+}
+
+# FastAPI ↔ Django (HTTP Client)
+# AI Engine consulta product data y ejecuta acciones
+
+class DjangoClient:
+    def __init__(self, base_url: str, api_key: str):
+        self.base_url = base_url
+        self.session = httpx.AsyncClient(
+            headers={"Authorization": f"Api-Key {api_key}"},
+            timeout=30.0
+        )
+    
+    async def get_products_by_ids(self, product_ids: List[int]) -> List[Dict]:
+        response = await self.session.get(
+            f"{self.base_url}/api/products/",
+            params={"ids": ",".join(map(str, product_ids))}
+        )
+        return response.json()["results"]
+    
+    async def create_order(self, order_data: Dict) -> Dict:
+        response = await self.session.post(
+            f"{self.base_url}/api/orders/",
+            json=order_data
+        )
+        return response.json()
+    
+    async def update_product_analytics(self, product_id: int, analytics: Dict):
+        await self.session.patch(
+            f"{self.base_url}/api/products/{product_id}/analytics/",
+            json=analytics
+        )
+```
+
+### **User Journey Completo: De Chat a Compra**
+
+```mermaid
+graph TD
+    A[Usuario abre chat] --> B[Next.js Frontend]
+    B --> C[WebSocket a FastAPI]
+    C --> D[AI Orchestrator]
+    
+    D --> E[Query Agent]
+    E --> F{Tipo de Request}
+    
+    F -->|Búsqueda| G[RAG Agent]
+    F -->|Acción| H[Action Agent]
+    F -->|Comparación| I[Product Agent]
+    
+    G --> J[Vector Search ChromaDB]
+    G --> K[SQL Search Django API]
+    J --> L[Hybrid Ranking]
+    K --> L
+    
+    L --> M[Enriched Results]
+    M --> N[Conversational Response]
+    
+    H --> O[Django API Call]
+    O --> P[Database Transaction]
+    P --> Q[Action Confirmation]
+    
+    I --> R[Product Analysis]
+    R --> S[Comparison Matrix]
+    
+    N --> T[WebSocket Response]
+    Q --> T
+    S --> T
+    
+    T --> B
+    B --> U[UI Update with Products]
+    
+    V[Usuario clickea comprar] --> W[Django API Order]
+    W --> X[Multi-vendor Split]
+    X --> Y[Payment Processing]
+    Y --> Z[Order Confirmation]
+```
+
+### **Data Flow - Proceso de Embedding**
+
+```python
+# Background Process: Generar embeddings para productos nuevos
+class EmbeddingPipeline:
+    async def process_new_products(self):
+        # 1. Obtener productos sin embedding de Django
+        products = await self.django_client.get_products_without_embeddings()
+        
+        for product in products:
+            # 2. Preparar texto para embedding
+            text_content = self.prepare_product_text(product)
+            
+            # 3. Generar embedding con OpenAI
+            embedding = await self.openai_client.embeddings.create(
+                model="text-embedding-3-large",
+                input=text_content
+            )
+            
+            # 4. Almacenar en ChromaDB
+            await self.chroma_client.add(
+                documents=[text_content],
+                embeddings=[embedding.data[0].embedding],
+                metadatas=[{
+                    "product_id": product["id"],
+                    "vendor_id": product["vendor_id"],
+                    "category": product["category"],
+                    "price": product["price"]
+                }],
+                ids=[f"product_{product['id']}"]
+            )
+            
+            # 5. Marcar como procesado en Django
+            await self.django_client.mark_embedding_generated(product["id"])
+    
+    def prepare_product_text(self, product: Dict) -> str:
+        return f"""
+        Producto: {product['name']}
+        Categoría: {product['category']}
+        Descripción: {product['description']}
+        Especificaciones: {product.get('specifications', {})}
+        Precio: ${product['price']}
+        Vendor: {product['vendor_name']}
+        Tags: {', '.join(product.get('tags', []))}
+        """.strip()
+```
+
+---
+
+## 🗄️ ESTRUCTURA DE PROYECTO COMPLETA
+
+### **Organización Modular de Directorios**
+
+```
+ai-marketplace-platform/
+├── docker-compose.yml                 # Orquestación completa
+├── docker-compose.dev.yml            # Override para desarrollo
+├── docker-compose.prod.yml           # Override para producción
+├── .env.example                      # Template de variables
+├── .env                             # Variables de entorno (gitignored)
+├── .gitignore                       # Git ignore rules
+├── README.md                        # Documentación del proyecto
+├── Makefile                         # Comandos de desarrollo
+│
+├── backend-django/                   # 🐍 Django E-Commerce Core
+│   ├── Dockerfile                   # Multi-stage build optimizado
+│   ├── requirements/
+│   │   ├── base.txt                # Dependencias básicas
+│   │   ├── development.txt         # Debug, testing tools
+│   │   └── production.txt          # Gunicorn, monitoring
+│   ├── manage.py
+│   ├── core/                       # Configuración principal
+│   │   ├── __init__.py
+│   │   ├── settings/
+│   │   │   ├── __init__.py
+│   │   │   ├── base.py            # Settings compartidos
+│   │   │   ├── development.py     # Dev settings
+│   │   │   ├── production.py      # Prod settings
+│   │   │   └── testing.py         # Test settings
+│   │   ├── urls.py                # URL routing principal
+│   │   ├── wsgi.py                # WSGI config
+│   │   └── asgi.py                # ASGI config (future WebSockets)
+│   ├── apps/                       # Django applications
+│   │   ├── __init__.py
+│   │   ├── accounts/              # User management extendido
+│   │   │   ├── models.py          # Custom User, Profile
+│   │   │   ├── serializers.py     # DRF serializers
+│   │   │   ├── views.py           # Authentication views
+│   │   │   ├── urls.py
+│   │   │   └── admin.py
+│   │   ├── vendors/               # Vendor management
+│   │   │   ├── models.py          # Vendor, VendorProfile
+│   │   │   ├── serializers.py
+│   │   │   ├── views.py           # Vendor CRUD, dashboard
+│   │   │   ├── permissions.py     # Vendor-specific permissions
+│   │   │   ├── admin.py           # Custom vendor admin
+│   │   │   └── tasks.py           # Celery tasks
+│   │   ├── products/              # Product catalog
+│   │   │   ├── models.py          # Product, Category, ProductImage
+│   │   │   ├── serializers.py
+│   │   │   ├── views.py           # Product CRUD, filtering
+│   │   │   ├── filters.py         # DjangoFilter classes
+│   │   │   ├── search.py          # Full-text search logic
+│   │   │   └── admin.py
+│   │   ├── orders/                # Order processing
+│   │   │   ├── models.py          # Order, OrderItem
+│   │   │   ├── serializers.py
+│   │   │   ├── views.py
+│   │   │   ├── utils.py           # Multi-vendor splitting logic
+│   │   │   └── tasks.py           # Order processing tasks
+│   │   ├── payments/              # Payment processing
+│   │   │   ├── models.py          # Payment, Refund
+│   │   │   ├── gateways/          # Payment gateway integrations
+│   │   │   │   ├── stripe.py
+│   │   │   │   └── paypal.py
+│   │   │   └── views.py
+│   │   ├── ai_integration/        # AI system integration
+│   │   │   ├── models.py          # AIConversation, ProductEmbedding
+│   │   │   ├── views.py           # API endpoints para FastAPI
+│   │   │   ├── tasks.py           # Embedding generation
+│   │   │   └── utils.py           # AI helper functions
+│   │   └── analytics/             # Business analytics
+│   │       ├── models.py          # Analytics, Metrics
+│   │       ├── views.py           # Analytics dashboards
+│   │       └── reports.py         # Report generation
+│   ├── static/                    # Static files
+│   ├── media/                     # User uploads
+│   ├── locale/                    # Internacionalización
+│   ├── templates/                 # Django templates (admin customization)
+│   └── tests/                     # Test suite completo
+│       ├── test_models.py
+│       ├── test_views.py
+│       ├── test_api.py
+│       └── factories.py          # Test data factories
+│
+├── ai-engine/                      # 🚀 FastAPI AI Engine
+│   ├── Dockerfile                 # Optimizado para ML workloads
+│   ├── requirements.txt
+│   ├── main.py                    # FastAPI application entry
+│   ├── core/
+│   │   ├── __init__.py
+│   │   ├── config.py              # Settings con Pydantic
+│   │   ├── dependencies.py        # FastAPI dependencies
+│   │   └── middleware.py          # Custom middleware
+│   ├── api/
+│   │   ├── __init__.py
+│   │   ├── v1/
+│   │   │   ├── __init__.py
+│   │   │   ├── chat.py           # Chat endpoints
+│   │   │   ├── search.py         # Search endpoints
+│   │   │   ├── products.py       # Product intelligence
+│   │   │   └── analytics.py      # Analytics endpoints
+│   │   └── websockets.py         # WebSocket handlers
+│   ├── agents/
+│   │   ├── __init__.py
+│   │   ├── orchestrator.py       # Main orchestrator
+│   │   ├── query_agent.py        # Query understanding
+│   │   ├── rag_agent.py          # Retrieval augmented generation
+│   │   ├── action_agent.py       # Action execution
+│   │   ├── product_agent.py      # Product intelligence
+│   │   └── analytics_agent.py    # Learning & optimization
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── schemas.py            # Pydantic models
+│   │   ├── llm_models.py         # LLM interfaces
+│   │   └── embeddings.py         # Embedding models
+│   ├── services/
+│   │   ├── __init__.py
+│   │   ├── vector_store.py       # ChromaDB interface
+│   │   ├── django_client.py      # Django API client
+│   │   ├── llm_service.py        # LLM service (OpenAI/Claude)
+│   │   ├── cache_service.py      # Redis caching
+│   │   └── notification_service.py # Real-time notifications
+│   ├── utils/
+│   │   ├── __init__.py
+│   │   ├── logging.py
+│   │   ├── helpers.py
+│   │   └── exceptions.py
+│   └── tests/
+│       ├── test_agents.py
+│       ├── test_api.py
+│       └── conftest.py           # Pytest configuration
+│
+├── frontend-nextjs/                # ⚛️ Next.js Frontend
+│   ├── Dockerfile
+│   ├── package.json
+│   ├── next.config.js
+│   ├── tailwind.config.js
+│   ├── tsconfig.json
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── common/           # Reusable components
+│   │   │   │   ├── Header.tsx
+│   │   │   │   ├── Footer.tsx
+│   │   │   │   ├── Loading.tsx
+│   │   │   │   └── ErrorBoundary.tsx
+│   │   │   ├── chat/             # Chat interface
+│   │   │   │   ├── ChatWindow.tsx
+│   │   │   │   ├── MessageBubble.tsx
+│   │   │   │   ├── TypingIndicator.tsx
+│   │   │   │   └── ChatInput.tsx
+│   │   │   ├── products/         # Product components
+│   │   │   │   ├── ProductCard.tsx
+│   │   │   │   ├── ProductGrid.tsx
+│   │   │   │   ├── ProductDetails.tsx
+│   │   │   │   ├── ProductComparison.tsx
+│   │   │   │   └── ProductFilters.tsx
+│   │   │   ├── vendors/          # Vendor components
+│   │   │   │   ├── VendorCard.tsx
+│   │   │   │   ├── VendorProfile.tsx
+│   │   │   │   └── VendorDashboard.tsx
+│   │   │   ├── orders/           # Order components
+│   │   │   │   ├── CartSummary.tsx
+│   │   │   │   ├── CheckoutFlow.tsx
+│   │   │   │   └── OrderHistory.tsx
+│   │   │   └── admin/            # Admin components
+│   │   │       ├── AdminLayout.tsx
+│   │   │       ├── AnalyticsDashboard.tsx
+│   │   │       └── VendorManagement.tsx
+│   │   ├── pages/
+│   │   │   ├── index.tsx         # Home page con chat
+│   │   │   ├── products/
+│   │   │   │   ├── index.tsx     # Product listing
+│   │   │   │   └── [slug].tsx    # Product detail
+│   │   │   ├── vendors/
+│   │   │   │   ├── index.tsx     # Vendor listing
+│   │   │   │   ├── [slug].tsx    # Vendor profile
+│   │   │   │   └── dashboard.tsx # Vendor dashboard
+│   │   │   ├── auth/
+│   │   │   │   ├── login.tsx
+│   │   │   │   ├── register.tsx
+│   │   │   │   └── forgot-password.tsx
+│   │   │   ├── checkout/
+│   │   │   │   ├── cart.tsx
+│   │   │   │   ├── shipping.tsx
+│   │   │   │   └── payment.tsx
+│   │   │   └── admin/
+│   │   │       ├── index.tsx     # Admin dashboard
+│   │   │       ├── products.tsx
+│   │   │       └── vendors.tsx
+│   │   ├── hooks/                # Custom React hooks
+│   │   │   ├── useAuth.ts
+│   │   │   ├── useChat.ts
+│   │   │   ├── useProducts.ts
+│   │   │   └── useWebSocket.ts
+│   │   ├── lib/                  # Utility libraries
+│   │   │   ├── api.ts            # API client setup
+│   │   │   ├── auth.ts           # Authentication logic
+│   │   │   ├── websocket.ts      # WebSocket client
+│   │   │   └── utils.ts          # Helper functions
+│   │   ├── types/                # TypeScript definitions
+│   │   │   ├── api.ts
+│   │   │   ├── chat.ts
+│   │   │   ├── product.ts
+│   │   │   └── user.ts
+│   │   └── styles/               # Global styles
+│   │       ├── globals.css
+│   │       └── components.css
+│   ├── public/                   # Static assets
+│   │   ├── images/
+│   │   ├── icons/
+│   │   └── favicon.ico
+│   └── __tests__/               # Frontend tests
+│       ├── components/
+│       ├── pages/
+│       └── utils/
+│
+├── infrastructure/                 # 🏗️ DevOps & Infrastructure
+│   ├── docker/                   # Additional Dockerfiles
+│   │   ├── django.prod.Dockerfile
+│   │   ├── fastapi.prod.Dockerfile
+│   │   └── nginx.Dockerfile
+│   ├── aws/                      # AWS CloudFormation/CDK
+│   │   ├── cloudformation/
+│   │   │   ├── network.yml       # VPC, subnets, security groups
+│   │   │   ├── database.yml      # RDS PostgreSQL
+│   │   │   ├── ecs.yml           # ECS services
+│   │   │   └── alb.yml           # Application Load Balancer
+│   │   ├── cdk/                  # AWS CDK (TypeScript)
+│   │   │   ├── app.ts
+│   │   │   ├── stacks/
+│   │   │   └── constructs/
+│   │   └── scripts/              # Deploy scripts
+│   │       ├── deploy.sh
+│   │       └── rollback.sh
+│   ├── nginx/                    # Load balancer configuration
+│   │   ├── nginx.conf
+│   │   ├── sites-enabled/
+│   │   └── ssl/
+│   ├── monitoring/               # Observability stack
+│   │   ├── prometheus/
+│   │   ├── grafana/
+│   │   └── elasticsearch/
+│   └── ci-cd/                    # CI/CD pipelines
+│       ├── github-actions/
+│       │   ├── test.yml
+│       │   ├── build.yml
+│       │   └── deploy.yml
+│       └── scripts/
+│           ├── test.sh
+│           └── build.sh
+│
+├── database/                      # 🗄️ Database setup
+│   ├── init/
+│   │   ├── 001_extensions.sql    # PostgreSQL extensions
+│   │   └── 002_initial_data.sql  # Initial setup
+│   ├── seeds/                    # Seed data
+│   │   ├── categories.json       # Product categories
+│   │   ├── vendors.json          # Sample vendors
+│   │   ├── products.json         # Sample products
+│   │   └── users.json            # Test users
+│   └── migrations/               # Custom migrations
+│       └── README.md
+│
+└── docs/                         # 📚 Project documentation
+    ├── README.md                 # Main project documentation
+    ├── api/                      # API documentation
+    │   ├── django-api.md
+    │   └── fastapi-api.md
+    ├── deployment/               # Deployment guides
+    │   ├── local-development.md
+    │   ├── aws-deployment.md
+    │   └── monitoring-setup.md
+    ├── architecture/             # Architecture docs
+    │   ├── system-design.md
+    │   ├── database-design.md
+    │   └── ai-agents.md
+    └── contributing/             # Development guides
+        ├── coding-standards.md
+        ├── testing-guide.md
+        └── git-workflow.md
+```
+
+---
+
+## � CONFIGURACIÓN DOCKER COMPLETA
+
+### **Docker Compose - Orquestación Completa**
+
+```yaml
+# docker-compose.yml - Configuración base
+version: '3.8'
+
+services:
+  # 🗄️ PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: marketplace_ai
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_MULTIPLE_DATABASES: marketplace_ai,chromadb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  # 🔴 Redis Cache & Sessions
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  # 🐍 Django Backend
+  django:
+    build:
+      context: ./backend-django
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DEBUG=1
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/marketplace_ai
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=dev-secret-key-change-in-production
+      - ALLOWED_HOSTS=localhost,127.0.0.1,django
+      - AI_ENGINE_URL=http://ai-engine:8000
+      - CORS_ALLOWED_ORIGINS=http://localhost:3000
+    volumes:
+      - ./backend-django:/app
+      - django_media:/app/media
+      - django_static:/app/staticfiles
+    ports:
+      - "8000:8000"
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             python manage.py runserver 0.0.0.0:8000"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 🚀 FastAPI AI Engine
+  ai-engine:
+    build:
+      context: ./ai-engine
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      chromadb:
+        condition: service_started
+    environment:
+      - DJANGO_API_URL=http://django:8000
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/marketplace_ai
+      - REDIS_URL=redis://redis:6379/1
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - CHROMA_URL=http://chromadb:8000
+      - ENVIRONMENT=development
+    volumes:
+      - ./ai-engine:/app
+      - ai_engine_cache:/app/cache
+    ports:
+      - "8001:8000"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 🧠 ChromaDB Vector Database
+  chromadb:
+    image: ghcr.io/chroma-core/chroma:0.4.15
+    environment:
+      - IS_PERSISTENT=TRUE
+      - PERSIST_DIRECTORY=/chroma/chroma
+      - ANONYMIZED_TELEMETRY=FALSE
+    volumes:
+      - chroma_data:/chroma/chroma
+    ports:
+      - "8002:8000"
+    networks:
+      - app-network
+
+  # ⚛️ Next.js Frontend
+  frontend:
+    build:
+      context: ./frontend-nextjs
+      dockerfile: Dockerfile
+      target: development
+    depends_on:
+      - django
+      - ai-engine
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_AI_API_URL=http://localhost:8001
+      - NEXT_PUBLIC_WS_URL=ws://localhost:8001
+    volumes:
+      - ./frontend-nextjs:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "3000:3000"
+    networks:
+      - app-network
+    command: npm run dev
+
+  # 👷 Celery Worker (Django background tasks)
+  celery-worker:
+    build:
+      context: ./backend-django
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DEBUG=1
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/marketplace_ai
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=dev-secret-key-change-in-production
+    volumes:
+      - ./backend-django:/app
+      - django_media:/app/media
+    command: celery -A core worker -l info
+    networks:
+      - app-network
+
+  # 📊 Celery Beat (Scheduled tasks)
+  celery-beat:
+    build:
+      context: ./backend-django
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DEBUG=1
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/marketplace_ai
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=dev-secret-key-change-in-production
+    volumes:
+      - ./backend-django:/app
+      - django_media:/app/media
+    command: celery -A core beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    networks:
+      - app-network
+
+  # 🔍 Nginx (Reverse Proxy - Opcional para desarrollo)
+  nginx:
+    image: nginx:alpine
+    depends_on:
+      - django
+      - ai-engine
+      - frontend
+    volumes:
+      - ./infrastructure/nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
+      - django_static:/var/www/django/static
+      - django_media:/var/www/django/media
+    ports:
+      - "80:80"
+    networks:
+      - app-network
+    profiles:
+      - nginx  # Solo se ejecuta con: docker-compose --profile nginx up
+
+volumes:
+  postgres_data:
+  redis_data:
+  chroma_data:
+  django_media:
+  django_static:
+  ai_engine_cache:
+
+networks:
+  app-network:
+    driver: bridge
+
+# docker-compose.override.yml - Para desarrollo local
+version: '3.8'
+
+services:
+  django:
+    volumes:
+      - ./backend-django:/app:cached
+    environment:
+      - DEBUG=1
+      - DJANGO_DEVELOPMENT_MODE=1
+    command: >
+      sh -c "pip install -r requirements/development.txt &&
+             python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+
+  ai-engine:
+    volumes:
+      - ./ai-engine:/app:cached
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+### **Dockerfiles Optimizados**
+
+```dockerfile
+# backend-django/Dockerfile
+FROM python:3.11-slim as base
+
+# Evitar prompts durante la instalación
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Instalar dependencias del sistema
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Instalar dependencias Python
+COPY requirements/ requirements/
+RUN pip install --upgrade pip && \
+    pip install -r requirements/base.txt
+
+# Copiar código fuente
+COPY . .
+
+# Crear usuario no-root
+RUN adduser --disabled-password --gecos '' appuser && \
+    chown -R appuser:appuser /app
+USER appuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health/ || exit 1
+
+EXPOSE 8000
+CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "4"]
+
+# ai-engine/Dockerfile
+FROM python:3.11-slim as base
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1
+
+# Instalar dependencias del sistema para ML
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Instalar dependencias Python
+COPY requirements.txt .
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt
+
+# Copiar código fuente
+COPY . .
+
+# Crear usuario no-root
+RUN adduser --disabled-password --gecos '' appuser && \
+    chown -R appuser:appuser /app
+USER appuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+EXPOSE 8000
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+
+# frontend-nextjs/Dockerfile
+FROM node:18-alpine as base
+
+WORKDIR /app
+
+# Instalar dependencias
+COPY package*.json ./
+RUN npm ci
+
+# Desarrollo
+FROM base as development
+COPY . .
+EXPOSE 3000
+CMD ["npm", "run", "dev"]
+
+# Producción
+FROM base as production
+COPY . .
+RUN npm run build
+EXPOSE 3000
+CMD ["npm", "start"]
+```
+
+---
+
+## 📋 PLAN DE IMPLEMENTACIÓN - DESARROLLO POR FASES
+
+### **FASE 1: Fundaciones Sólidas (Semanas 1-2)**
+
+#### **Semana 1: Setup de Infraestructura Base**
+
+**🎯 Objetivo**: Levantar todos los servicios comunicándose correctamente
+
+**Día 1: Project Bootstrap**
+```bash
+# Crear estructura completa del proyecto
+mkdir ai-marketplace-platform && cd ai-marketplace-platform
+git init
+
+# Crear directorios principales
+mkdir -p backend-django/{apps,core,templates,static,media,tests}
+mkdir -p ai-engine/{agents,api,models,services,utils,tests}
+mkdir -p frontend-nextjs/{src,public}
+mkdir -p infrastructure/{docker,aws,nginx,monitoring}
+mkdir -p database/{init,seeds,migrations}
+mkdir -p docs/{api,deployment,architecture}
+
+# Setup inicial de archivos de configuración
+touch docker-compose.yml docker-compose.override.yml .env.example .gitignore README.md Makefile
+```
+
+**Día 2-3: Django Backend Foundation**
+```bash
+# Crear proyecto Django con estructura multivendor
+cd backend-django
+django-admin startproject core .
+
+# Crear apps esenciales
+python manage.py startapp accounts
+python manage.py startapp vendors  
+python manage.py startapp products
+python manage.py startapp orders
+python manage.py startapp ai_integration
+python manage.py startapp analytics
+
+# Configurar settings modulares
+# Crear modelos base para multivendor
+# Setup DRF y configuración de APIs
+# Configurar autenticación JWT
+```
+
+**Día 4: FastAPI AI Engine Foundation**
+```bash
+cd ../ai-engine
+
+# Setup FastAPI con estructura de agentes
+# Crear estructura base de agentes
+# Configurar conexión a ChromaDB
+# Setup WebSockets para chat real-time
+# Configurar cliente HTTP para Django API
+```
+
+**Día 5: Docker Setup y Primera Integración**
+```bash
+# Configurar docker-compose.yml completo
+# Crear Dockerfiles optimizados
+# Setup de PostgreSQL con extensiones
+# Configurar Redis para cache y sessions
+# Levantar stack completo por primera vez
+```
+
+#### **Semana 2: Conexiones y APIs Base**
+
+**Día 1-2: Django APIs Core**
+- Implementar modelos completos (Vendor, Product, Order, User)
+- Crear serializers DRF completos
+- Implementar ViewSets con filtering y pagination
+- Setup Django Admin customizado para multivendor
+- Crear fixtures con data de prueba
+
+**Día 3-4: FastAPI AI Integration**
+- Implementar agentes base (Query, RAG, Action)
+- Crear endpoints de chat básicos
+- Setup ChromaDB y primeros embeddings
+- Implementar comunicación Django ↔ FastAPI
+- WebSocket connections para chat real-time
+
+**Día 5: Frontend Foundation**
+```bash
+cd ../frontend-nextjs
+# Setup Next.js con TypeScript
+# Crear componentes base (Chat, Products, Layout)
+# Configurar cliente API (axios/fetch)
+# Implementar autenticación frontend
+# Conectar con Django y FastAPI APIs
+```
+
+### **FASE 2: AI Core y Multi-Vendor (Semanas 3-4)**
+
+#### **Semana 3: AI Agents Implementation**
+
+**🎯 Objetivo**: Conversaciones AI funcionales con recomendaciones
+
+**Día 1-2: Query Understanding Agent**
+- Implementar NLP processing con spaCy
+- Entity extraction y intent classification
+- Context building y query expansion
+- Integration con historial de usuario
+
+**Día 3-4: RAG Agent Completo**
+- Vector search optimizado en ChromaDB
+- Hybrid search (vector + SQL + full-text)
+- Advanced ranking algorithms
+- Context enrichment con vendor data
+
+**Día 5: Action Agent**
+- Cart management completo
+- Multi-vendor order creation
+- Real-time stock verification
+- Price monitoring y alerts
+
+#### **Semana 4: Multi-Vendor Features**
+
+**🎯 Objetivo**: Funcionalidades completas de marketplace
+
+**Día 1-2: Vendor Dashboard**
+- Vendor registration y onboarding
+- Product management interface
+- Order management y fulfillment
+- Analytics dashboard básico
+
+**Día 3-4: Order Processing**
+- Multi-vendor cart splitting
+- Commission calculations
+- Payment integration (Stripe)
+- Order status tracking
+
+**Día 5: Admin Features**
+- Platform admin dashboard
+- Vendor approval workflow
+- Financial reporting
+- Content moderation tools
+
+### **FASE 3: Frontend Avanzado y UX (Semanas 5-6)**
+
+#### **Semana 5: Chat Interface Avanzada**
+
+**🎯 Objetivo**: Experiencia de chat premium con UI/UX pulida
+
+- Real-time chat con typing indicators
+- Product cards interactive en chat
+- Voice input/output (opcional)
+- Mobile-responsive design
+- Loading states y error handling
+
+#### **Semana 6: E-commerce Frontend**
+
+**🎯 Objetivo**: Experiencia de compra completa
+
+- Product catalog con filtering avanzado
+- Product detail pages optimizadas
+- Shopping cart y checkout flow
+- Order tracking y history
+- Vendor profile pages
+
+### **FASE 4: Performance y Deploy (Semanas 7-8)**
+
+#### **Semana 7: Optimización y Testing**
+
+**🎯 Objetivo**: Performance optimization y testing completo
+
+- Database query optimization
+- Redis caching estratégico  
+- Frontend performance optimization
+- Unit tests para todos los componentes
+- Integration tests end-to-end
+- Load testing con herramientas
+
+#### **Semana 8: AWS Deployment**
+
+**🎯 Objetivo**: Aplicación live en producción
+
+- ECS setup con Fargate
+- RDS PostgreSQL configuration
+- ElastiCache Redis setup
+- S3 para media files
+- CloudFront CDN setup
+- CI/CD pipeline con GitHub Actions
+- Monitoring con CloudWatch
+
+---
+
+## 🎯 MILESTONES Y CRITERIOS DE ÉXITO
+
+### **Milestone 1 (Semana 2): Fundaciones Técnicas ✅**
+- [ ] Todos los containers levantan sin errores
+- [ ] Django admin accesible con productos sample
+- [ ] FastAPI responde en endpoints de chat
+- [ ] Frontend renderiza y consume APIs
+- [ ] Database con seed data completa
+- [ ] Logs centralizados funcionando
+
+### **Milestone 2 (Semana 4): AI + Multi-Vendor ✅**
+- [ ] Chat AI responde con recomendaciones reales
+- [ ] Búsqueda híbrida funcionando (vector + SQL)
+- [ ] Vendor dashboard operacional
+- [ ] Multi-vendor orders procesándose
+- [ ] Payment integration básica
+- [ ] Admin puede gestionar vendors
+
+### **Milestone 3 (Semana 6): Frontend Completo ✅**
+- [ ] Chat interface premium con UX pulida
+- [ ] Product catalog completamente funcional
+- [ ] Checkout flow end-to-end
+- [ ] Mobile responsive design
+- [ ] Real-time features trabajando
+- [ ] Error handling robusto
+
+### **Milestone 4 (Semana 8): Production Ready ✅**
+- [ ] Aplicación desplegada en AWS
+- [ ] Performance optimizada (< 2s load time)
+- [ ] Test coverage > 80%
+- [ ] CI/CD pipeline funcional
+- [ ] Monitoring y logs en producción
+- [ ] Backup y disaster recovery
+
+---
+
+## 💼 BENEFICIOS PARA PORTFOLIO
+
+### **Habilidades Técnicas Demostradas**
+
+**Backend Development**
+- ✅ Django ORM avanzado con relaciones complejas
+- ✅ DRF APIs con autenticación JWT
+- ✅ Celery para background tasks
+- ✅ Custom Django Admin interfaces
+- ✅ Database design y optimization
+
+**Modern Backend**
+- ✅ FastAPI con async/await
+- ✅ WebSockets para real-time features
+- ✅ Microservices architecture
+- ✅ API documentation automática
+- ✅ Type hints y validation con Pydantic
+
+**AI & Machine Learning**
+- ✅ LLM integration (OpenAI/Claude)
+- ✅ Vector databases (ChromaDB)
+- ✅ RAG (Retrieval Augmented Generation)
+- ✅ NLP processing
+- ✅ Conversational AI agents
+
+**Frontend Development**
+- ✅ Next.js con SSR/SSG
+- ✅ TypeScript end-to-end
+- ✅ Real-time WebSocket connections
+- ✅ Responsive design con Tailwind
+- ✅ State management complejo
+
+**DevOps & Cloud**
+- ✅ Docker containerization
+- ✅ AWS ECS deployment
+- ✅ CI/CD pipelines
+- ✅ Infrastructure as Code
+- ✅ Monitoring y logging
+
+**Architecture & Design**
+- ✅ Microservices design patterns
+- ✅ API design best practices
+- ✅ Database architecture
+- ✅ Security implementation
+- ✅ Scalable system design
+
+---
+
+## 🛠️ TOOLS Y COMANDOS DE DESARROLLO
+
+### **Makefile para Comandos Frecuentes**
+
+```makefile
+# Makefile
+.PHONY: help build up down restart logs shell test clean
+
+help: ## Mostrar ayuda
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+
+build: ## Construir todos los containers
+	docker-compose build
+
+up: ## Levantar todos los servicios
+	docker-compose up -d
+
+down: ## Bajar todos los servicios
+	docker-compose down
+
+restart: ## Reiniciar todos los servicios
+	docker-compose restart
+
+logs: ## Ver logs de todos los servicios
+	docker-compose logs -f
+
+shell-django: ## Shell en Django container
+	docker-compose exec django python manage.py shell
+
+shell-ai: ## Shell en AI Engine container
+	docker-compose exec ai-engine python
+
+test-django: ## Ejecutar tests Django
+	docker-compose exec django python manage.py test
+
+test-ai: ## Ejecutar tests FastAPI
+	docker-compose exec ai-engine pytest
+
+migrate: ## Ejecutar migraciones Django
+	docker-compose exec django python manage.py migrate
+
+makemigrations: ## Crear migraciones Django
+	docker-compose exec django python manage.py makemigrations
+
+collectstatic: ## Recopilar archivos estáticos
+	docker-compose exec django python manage.py collectstatic --noinput
+
+loaddata: ## Cargar datos de prueba
+	docker-compose exec django python manage.py loaddata database/seeds/*.json
+
+clean: ## Limpiar containers y volúmenes
+	docker-compose down -v
+	docker system prune -f
+
+setup: ## Setup inicial completo
+	cp .env.example .env
+	docker-compose up -d postgres redis
+	sleep 10
+	docker-compose up -d django
+	sleep 10
+	make migrate
+	make loaddata
+	docker-compose up -d
+
+dev: ## Modo desarrollo
+	docker-compose -f docker-compose.yml -f docker-compose.override.yml up
+```
+
+Esta es tu **guía completa** para construir el marketplace AI. Cada fase tiene objetivos claros, criterios de éxito medibles, y te permite demostrar habilidades valiosas para el mercado laboral. ¿Por cuál fase quieres comenzar específicamente?
+```
